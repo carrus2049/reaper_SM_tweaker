@@ -119,7 +119,8 @@ function AdjustSM(delta_value)
     return
   end
   reaper.SetTakeStretchMarker(take, sm_idx, pos + delta_value)
-  reaper.MoveEditCursor(delta_value, false)
+  -- reaper.MoveEditCursor(delta_value, false)
+  reaper.SetEditCurPos(pos + delta_value, true, false)
 
   reaper.UpdateArrange()
   reaper.Undo_EndBlock("Adjust stretch marker", -1)

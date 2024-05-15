@@ -10,3 +10,11 @@ assign shortcut key as needed.
 - select item and click on a stretch marker to anchor the edit cursor to it.
 - run corresponding script to move the stretch marker.
 - the step size can be setup in `configs.lua`
+
+## Assign 2way move function to mousewheel or midi encoder
+- `API_SM_move_abs_val_2way.lua` and `API_SM_move_zoom_dep_2way`
+is suitable for assigning to mousewheel or midi encoder.
+- For mousewheel, just add mousewheel as shortcut key.
+- For midi encoder, besides adding shortcut, set MIDI CC to Relative 2 mode, tested on the main encoder(left-most one) 
+on [Arturia MiniLab 3](https://www.arturia.com/products/hybrid-synths/minilab-3/update)).
+- To reverse the direction, change `REVERT = false` to `REVERT = true` in the script.
