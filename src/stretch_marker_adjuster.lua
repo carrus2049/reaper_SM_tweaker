@@ -25,14 +25,18 @@ local function get_stretch_marker_at_edit_cursor()
   end
 
   local edit_cursor_pos = reaper.GetCursorPosition()
+  local take_play_rate = reaper.GetMediaItemTakeInfo_Value(take, "D_PLAYRATE")
   local sm_pos = nil
   local sm_idx = nil
   -- reaper.ShowConsoleMsg("n_stretch_markers: " .. n_stretch_markers .. "\n")
   -- reaper.ShowConsoleMsg("edit_cursor_pos: " .. edit_cursor_pos .. "\n")
   for i = 0, n_stretch_markers - 1 do
     local _, pos = reaper.GetTakeStretchMarker(take, i)
-    pos = item_pos + pos
+    pos = pos / take_play_rate
     -- reaper.ShowConsoleMsg("pos: " .. pos .. "\n")
+    -- reaper.ShowConsoleMsg("item_pos: " .. item_pos .. "\n")
+    pos = item_pos + pos
+    -- reaper.ShowConsoleMsg("pos: " .. pos .. "edit curpos: " .. edit_cursor_pos .. "\n")
     -- if pos == edit_cursor_pos then
     if math.abs(pos - edit_cursor_pos) < 0.0001 then
       sm_idx = i
@@ -111,7 +115,6 @@ function AdjustSM(delta_value)
 
   reaper.Undo_BeginBlock()
   local _, pos = reaper.GetTakeStretchMarker(take, sm_idx)
-
   -- limit the movement of stretch marker to the adjacent stretch markers
   local prev_pos, next_pos = get_adjacent_stretch_markers(take, sm_idx)
   if pos + delta_value < prev_pos or pos + delta_value > next_pos then
@@ -120,7 +123,9 @@ function AdjustSM(delta_value)
   end
   reaper.SetTakeStretchMarker(take, sm_idx, pos + delta_value)
   -- reaper.MoveEditCursor(delta_value, false)
-  reaper.SetEditCurPos(pos + delta_value, true, false)
+  local item_pos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
+  local take_play_rate = reaper.GetMediaItemTakeInfo_Value(take, "D_PLAYRATE")
+  reaper.SetEditCurPos(item_pos + (pos + delta_value)/take_play_rate, true, false)
 
   reaper.UpdateArrange()
   reaper.Undo_EndBlock("Adjust stretch marker", -1)
