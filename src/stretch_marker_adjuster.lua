@@ -147,6 +147,7 @@ end
 local function take_next_stretch_marker_follow_rate(take, sm_idx, rate)
   local rv, pos, srcpos = reaper.GetTakeStretchMarker(take, sm_idx)
   local rv, next_pos, next_srcpos = reaper.GetTakeStretchMarker(take, sm_idx + 1)
+  reaper.ShowConsoleMsg("next_pos: " .. next_pos .. "\n")
   if rv == -1 then return end
   local src_offset = next_srcpos - srcpos
   local target_time_offset = src_offset / rate
@@ -166,19 +167,54 @@ function AdjustPrevSMSlope(delta_value)
   AdjustSM(delta_value)
   local rv,  prev_pos, prev_srcpos = reaper.GetTakeStretchMarker(take, sm_idx - 1)
   local rv,  pos, srcpos = reaper.GetTakeStretchMarker(take, sm_idx)
+  local time_offset = pos - prev_pos
+  local init_offset = init_pos - prev_pos
+
+
+  local prev_init_slope = reaper.GetTakeStretchMarkerSlope(take, sm_idx-1)
+  local slope = 1 - time_offset / init_offset + prev_init_slope
+  -- local new_slope = 
+
+  reaper.ShowConsoleMsg("prev_init_slope: " .. prev_init_slope .. "\n")
+  reaper.ShowConsoleMsg("slope: " .. slope .. "\n")
+  reaper.SetTakeStretchMarkerSlope(take, sm_idx-1, slope)
+
+  -- local right_rate = init_offset / time_offset * (1+ slope)
+  local prev_src_offset = init_src_pos - prev_srcpos
+  local prev_stretch_rate = prev_src_offset / time_offset + slope
+  reaper.ShowConsoleMsg("prev_stretch_rate: " .. prev_stretch_rate .. "\n")
+  local right_rate = init_offset / time_offset
+  reaper.ShowConsoleMsg("right_rate: " .. right_rate .. "\n")
+  take_next_stretch_marker_follow_rate(take, sm_idx, prev_stretch_rate)
+end
+
+function AdjustPrevSMSlope_bak(delta_value)
+  local item = reaper.GetSelectedMediaItem(0, 0)
+  local take = reaper.GetActiveTake(item)
+  add_SM_at_start_end_of_take_item(take)
+  local sm_idx, sm_pos = get_stretch_marker_at_edit_cursor()
+  local rv, init_pos, init_src_pos = reaper.GetTakeStretchMarker(take, sm_idx)
+  
+  -- local rv, init_pos = reaper.GetTakeStretchMarker(take, sm_idx)
+  AdjustSM(delta_value)
+  local rv,  prev_pos, prev_srcpos = reaper.GetTakeStretchMarker(take, sm_idx - 1)
+  local rv,  pos, srcpos = reaper.GetTakeStretchMarker(take, sm_idx)
   local src_offset = srcpos - prev_srcpos
+  -- local src_offset = init_pos - prev_pos
   local time_offset = pos - prev_pos
   local init_offset = init_pos - prev_pos
   -- reaper.ShowConsoleMsg("src_offset: " .. src_offset .. "\n")
   -- reaper.ShowConsoleMsg("time_offset: " .. time_offset .. "\n")
   -- reaper.ShowConsoleMsg("init_offset: " .. init_offset .. "\n")
 
-  local slope = 1 - time_offset / src_offset
-  -- reaper.ShowConsoleMsg("slope: " .. slope .. "\n")
 
+  
   local prev_init_slope = reaper.GetTakeStretchMarkerSlope(take, sm_idx-1)
-  -- reaper.ShowConsoleMsg("prev_init_slope: " .. prev_init_slope .. "\n")
-  -- reaper.ShowConsoleMsg("slope: " .. slope .. "\n")
+  local slope = 1 - time_offset / src_offset
+  -- local new_slope = 
+
+  reaper.ShowConsoleMsg("prev_init_slope: " .. prev_init_slope .. "\n")
+  reaper.ShowConsoleMsg("slope: " .. slope .. "\n")
   reaper.SetTakeStretchMarkerSlope(take, sm_idx-1, slope)
   local right_rate = src_offset / time_offset * (1+ slope)
   -- reaper.ShowConsoleMsg("right_rate: " .. right_rate .. "\n")
