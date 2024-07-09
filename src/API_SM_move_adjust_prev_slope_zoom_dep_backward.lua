@@ -2,4 +2,4 @@ local script_path = debug.getinfo(1).source:match(("@?(.*%s)"):format(package.co
 dofile(script_path .. "stretch_marker_adjuster.lua")
 dofile(script_path .. "configs.lua")
 
-AdjustPrevSMSlope(-SM_SLOPE_STEP_SIZE)
+AdjustSMPrevSMSlopeZoomDep(-SM_SLOPE_STEP_SIZE_ZOOM_DEP_LAMBDA)

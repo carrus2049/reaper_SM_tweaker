@@ -188,6 +188,14 @@ function AdjustPrevSMSlope(delta_value)
   take_next_stretch_marker_follow_rate(take, sm_idx, prev_stretch_rate)
 end
 
+function AdjustSMPrevSMSlopeZoomDep(lambda)
+  local pixel_per_second = reaper.GetHZoomLevel()
+  -- reaper.ShowConsoleMsg("pixel_per_second: " .. pixel_per_second .. "\n")
+  local delta_value = lambda / pixel_per_second
+  -- reaper.ShowConsoleMsg("delta_value: " .. delta_value .. "\n")
+  AdjustPrevSMSlope(delta_value)
+end
+
 function AdjustPrevSMSlope_bak(delta_value)
   local item = reaper.GetSelectedMediaItem(0, 0)
   local take = reaper.GetActiveTake(item)
