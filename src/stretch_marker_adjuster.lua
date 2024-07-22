@@ -1,13 +1,56 @@
 
+
+local function take_have_sm_in_certain_srcpos(take, srcpos)
+  local n_stretch_markers = reaper.GetTakeNumStretchMarkers(take)
+  -- reaper.ShowConsoleMsg("n_stretch_markers: " .. n_stretch_markers .. "\n")
+  for i = 0, n_stretch_markers - 1 do
+    local rv, pos, src_pos = reaper.GetTakeStretchMarker(take, i)
+    if src_pos == srcpos then
+      return true
+    end
+  end
+  return false
+end
+
+local function get_stretch_marker_at_take_source_end_pos(take)
+  local src = reaper.GetMediaItemTake_Source(take)
+  local src_len = reaper.GetMediaSourceLength(src)
+  local n_stretch_markers = reaper.GetTakeNumStretchMarkers(take)
+  for i = 0, n_stretch_markers - 1 do
+    local rv, pos, src_pos = reaper.GetTakeStretchMarker(take, i)
+    -- reaper.ShowConsoleMsg("src_pos: " .. src_pos .. " src_len" .. src_len .. "\n")
+    -- reaper.ShowConsoleMsg('offset' .. src_pos - src_len .. "\n")
+    if math.abs(src_pos - src_len) < 0.0001 then
+      -- reaper.ShowConsoleMsg("got pos: " .. pos .. "\n")
+      return i, pos
+    end
+  end
+  return nil
+end
+
 local function add_SM_at_start_end_of_take_item(take)
   local item = reaper.GetMediaItemTake_Item(take)
   local item_len = reaper.GetMediaItemInfo_Value(item, "D_LENGTH")
 
   -- TODO test if srcpos is calculated correctly or needs to be sent as an argument
   -- TODO in situations like take and item start at different positions, has different len etc.
-  reaper.SetTakeStretchMarker(take, -1, 0)
-  reaper.SetTakeStretchMarker(take, -1, item_len)
+
+  local src = reaper.GetMediaItemTake_Source(take)
+  local src_len = reaper.GetMediaSourceLength(src)
+
+  if not take_have_sm_in_certain_srcpos(take, 0) then
+    reaper.SetTakeStretchMarker(take, -1, 0)
+  end
+  if not take_have_sm_in_certain_srcpos(take, src_len) then
+    reaper.SetTakeStretchMarker(take, -1, src_len)
+  end
+  -- reaper.SetTakeStretchMarker(take, -1, 0)
+  -- reaper.SetTakeStretchMarker(take, -1, item_len)
 end
+
+
+
+
 
 local function get_stretch_marker_at_edit_cursor()
   local cursor = reaper.GetCursorPosition()
@@ -147,7 +190,7 @@ end
 local function take_next_stretch_marker_follow_rate(take, sm_idx, rate)
   local rv, pos, srcpos = reaper.GetTakeStretchMarker(take, sm_idx)
   local rv, next_pos, next_srcpos = reaper.GetTakeStretchMarker(take, sm_idx + 1)
-  reaper.ShowConsoleMsg("next_pos: " .. next_pos .. "\n")
+  -- reaper.ShowConsoleMsg("next_pos: " .. next_pos .. "\n")
   if rv == -1 then return end
   local src_offset = next_srcpos - srcpos
   local target_time_offset = src_offset / rate
@@ -175,17 +218,26 @@ function AdjustPrevSMSlope(delta_value)
   local slope = 1 - time_offset / init_offset + prev_init_slope
   -- local new_slope = 
 
-  reaper.ShowConsoleMsg("prev_init_slope: " .. prev_init_slope .. "\n")
-  reaper.ShowConsoleMsg("slope: " .. slope .. "\n")
+  -- reaper.ShowConsoleMsg("prev_init_slope: " .. prev_init_slope .. "\n")
+  -- reaper.ShowConsoleMsg("slope: " .. slope .. "\n")
   reaper.SetTakeStretchMarkerSlope(take, sm_idx-1, slope)
 
   -- local right_rate = init_offset / time_offset * (1+ slope)
   local prev_src_offset = init_src_pos - prev_srcpos
   local prev_stretch_rate = prev_src_offset / time_offset + slope
-  reaper.ShowConsoleMsg("prev_stretch_rate: " .. prev_stretch_rate .. "\n")
+  -- reaper.ShowConsoleMsg("prev_stretch_rate: " .. prev_stretch_rate .. "\n")
   local right_rate = init_offset / time_offset
-  reaper.ShowConsoleMsg("right_rate: " .. right_rate .. "\n")
+  -- reaper.ShowConsoleMsg("right_rate: " .. right_rate .. "\n")
   take_next_stretch_marker_follow_rate(take, sm_idx, prev_stretch_rate)
+
+  -- item len follow last stretch marker
+  local i, take_sm_pos_end = get_stretch_marker_at_take_source_end_pos(take)
+  if i == nil then 
+    reaper.MB("No stretch marker at take source end", "Error", 0)
+    return
+  end
+  -- reaper.ShowConsoleMsg("take_sm_pos_end: " .. take_sm_pos_end .. "\n")
+  reaper.SetMediaItemLength(item, take_sm_pos_end, false)
 end
 
 function AdjustSMPrevSMSlopeZoomDep(lambda)
@@ -194,37 +246,4 @@ function AdjustSMPrevSMSlopeZoomDep(lambda)
   local delta_value = lambda / pixel_per_second
   -- reaper.ShowConsoleMsg("delta_value: " .. delta_value .. "\n")
   AdjustPrevSMSlope(delta_value)
-end
-
-function AdjustPrevSMSlope_bak(delta_value)
-  local item = reaper.GetSelectedMediaItem(0, 0)
-  local take = reaper.GetActiveTake(item)
-  add_SM_at_start_end_of_take_item(take)
-  local sm_idx, sm_pos = get_stretch_marker_at_edit_cursor()
-  local rv, init_pos, init_src_pos = reaper.GetTakeStretchMarker(take, sm_idx)
-  
-  -- local rv, init_pos = reaper.GetTakeStretchMarker(take, sm_idx)
-  AdjustSM(delta_value)
-  local rv,  prev_pos, prev_srcpos = reaper.GetTakeStretchMarker(take, sm_idx - 1)
-  local rv,  pos, srcpos = reaper.GetTakeStretchMarker(take, sm_idx)
-  local src_offset = srcpos - prev_srcpos
-  -- local src_offset = init_pos - prev_pos
-  local time_offset = pos - prev_pos
-  local init_offset = init_pos - prev_pos
-  -- reaper.ShowConsoleMsg("src_offset: " .. src_offset .. "\n")
-  -- reaper.ShowConsoleMsg("time_offset: " .. time_offset .. "\n")
-  -- reaper.ShowConsoleMsg("init_offset: " .. init_offset .. "\n")
-
-
-  
-  local prev_init_slope = reaper.GetTakeStretchMarkerSlope(take, sm_idx-1)
-  local slope = 1 - time_offset / src_offset
-  -- local new_slope = 
-
-  reaper.ShowConsoleMsg("prev_init_slope: " .. prev_init_slope .. "\n")
-  reaper.ShowConsoleMsg("slope: " .. slope .. "\n")
-  reaper.SetTakeStretchMarkerSlope(take, sm_idx-1, slope)
-  local right_rate = src_offset / time_offset * (1+ slope)
-  -- reaper.ShowConsoleMsg("right_rate: " .. right_rate .. "\n")
-  take_next_stretch_marker_follow_rate(take, sm_idx, right_rate)
 end
