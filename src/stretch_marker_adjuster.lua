@@ -198,7 +198,29 @@ local function take_next_stretch_marker_follow_rate(take, sm_idx, rate)
   -- reaper.ShowConsoleMsg("target_time_offset: " .. target_time_offset .. "\n")
 
   -- reaper.ShowConsoleMsg("target_time_offset: " .. target_time_offset .. "\n")
+  -- reaper.SetTakeStretchMarker(take, sm_idx + 1, pos + target_time_offset)
+end
+
+local function take_next_stretch_marker_follow_slope(take, sm_idx, rate)
+  local rv, pos, srcpos = reaper.GetTakeStretchMarker(take, sm_idx)
+  local rv, next_pos, next_srcpos = reaper.GetTakeStretchMarker(take, sm_idx + 1)
+  -- reaper.ShowConsoleMsg("next_pos: " .. next_pos .. "\n")
+  if rv == -1 then return end
+  
+  local src_offset = next_srcpos - srcpos
+  local prev_stretch_rate = src_offset / (pos - next_pos)
+  reaper.ShowConsoleMsg("prev_stretch_rate: " .. prev_stretch_rate .. "\n")
+  local target_time_offset = src_offset / rate
+  -- reaper.ShowConsoleMsg("src_offset: " .. src_offset .. "\n")
+  reaper.ShowConsoleMsg("target_time_offset: " .. target_time_offset .. "\n")
+
+  -- reaper.ShowConsoleMsg("target_time_offset: " .. target_time_offset .. "\n")
+  
   reaper.SetTakeStretchMarker(take, sm_idx + 1, pos + target_time_offset)
+  reaper.SetTakeStretchMarkerSlope(take, sm_idx, 0)
+  -- reaper.SetTakeStretchMarkerSlope(take, sm_idx + 1, slope)
+  
+
 
 end
 function AdjustPrevSMSlope(delta_value)
@@ -231,13 +253,17 @@ function AdjustPrevSMSlope(delta_value)
   -- reaper.ShowConsoleMsg("right_rate: " .. right_rate .. "\n")
   -- take_next_stretch_marker_follow_rate(take, sm_idx, prev_stretch_rate)
   local n_stretch_markers = reaper.GetTakeNumStretchMarkers(take)
-  for i = sm_idx, n_stretch_markers - 1 do
-    take_next_stretch_marker_follow_rate(take, i, prev_stretch_rate)
+  reaper.ShowConsoleMsg("n_stretch_markers: " .. n_stretch_markers .. "\n")
+  for i = sm_idx, n_stretch_markers - 2 do
+    reaper.ShowConsoleMsg("i: " .. i .. "\n")
+    -- take_next_stretch_marker_follow_rate(take, i, prev_stretch_rate)
+    take_next_stretch_marker_follow_slope(take, i, prev_stretch_rate, slope)
+
   end
 
   -- item len follow last stretch marker
   local i, take_sm_pos_end = get_stretch_marker_at_take_source_end_pos(take)
-  if i == nil then 
+  if i == nil then
     reaper.MB("No stretch marker at take source end", "Error", 0)
     return
   end
