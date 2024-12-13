@@ -10,7 +10,7 @@ local function get_take_SM_idx_on_edit_cursor(take)
     local item_pos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
     for i = 0, n_stretch_markers - 1 do
         local _, pos = reaper.GetTakeStretchMarker(take, i)
-        pos = pos / take_play_rate + item_pos
+        pos = pos / take_play_rate + item_pos 
         -- reaper.ShowConsoleMsg("pos: " .. pos .. "\n")
         -- reaper.ShowConsoleMsg("reaper.GetCursorPosition(): " .. reaper.GetCursorPosition() .. "\n")
         if math.abs(pos - reaper.GetCursorPosition()) < 0.0001 then
