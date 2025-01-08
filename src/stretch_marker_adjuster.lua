@@ -287,6 +287,66 @@ function AdjustPrevSMSlope(delta_value)
   local sm_tail_post = GetSMData(take, sm_idx + 1)
 
   local head_left_rate = sm_head_prev.rate_left
+  local head_new_slope = 1 - head_left_rate / (sm_head_post.len_init/sm_head_post.len_after)
+  reaper.SetTakeStretchMarkerSlope(take, sm_idx-1, head_new_slope)
+  local sm_head_ppost = GetSMData(take, sm_idx - 1)
+
+  local body_rate_left = sm_head_ppost.rate_right
+  local body_rate_right = sm_body_prev.rate_right
+  reaper.ShowConsoleMsg("body_rate_left: " .. body_rate_left .. "\n")
+  reaper.ShowConsoleMsg("body_rate_right: " .. body_rate_right .. "\n")
+  -- rate_right = (len_init / len_after) * (1+slope)
+  -- rate_left = (len_init / len_after) * (1-slope)
+  -- so rate_right/rate_left = (1+slope)/(1-slope)
+
+  local body_slope = (body_rate_right/body_rate_left - 1) / (body_rate_right/body_rate_left + 1)
+  local target_body_len_after = sm_body_post.len_init/ ((body_rate_left / (1 - body_slope)))
+  reaper.ShowConsoleMsg("target_body_len_after: " .. target_body_len_after .. "\n")
+  local target_body_pos_b = sm_body_post.pos + target_body_len_after
+  reaper.ShowConsoleMsg("target_body_pos_b: " .. target_body_pos_b .. "\n")
+  reaper.SetTakeStretchMarker(take, sm_idx+1, target_body_pos_b)
+  reaper.SetTakeStretchMarkerSlope(take, sm_idx, body_slope)
+
+  local sm_tail_ppost = GetSMData(take, sm_idx + 1)
+
+  local offset_head2body = sm_body_post.pos - sm_body_prev.pos
+  reaper.ShowConsoleMsg("offset_head2body: " .. offset_head2body .. "\n")
+  local offset_body2tail = sm_tail_ppost.pos - sm_tail_post.pos
+  reaper.ShowConsoleMsg("offset_body2tail: " .. offset_body2tail .. "\n")
+  local offset_head2tail = offset_head2body + offset_body2tail
+  reaper.ShowConsoleMsg("offset_head2tail: " .. offset_head2tail .. "\n")
+  local item_length = reaper.GetMediaItemInfo_Value(item, "D_LENGTH")
+  reaper.SetMediaItemLength(item, item_length + offset_head2tail, false)
+  local n_take_stretch_markers = reaper.GetTakeNumStretchMarkers(take)
+  for i = sm_idx+2, n_take_stretch_markers do
+    local rv, pos, srcpos = reaper.GetTakeStretchMarker(take, i)
+    reaper.SetTakeStretchMarker(take, i, pos + offset_body2tail)
+  end
+
+
+end
+  
+  
+
+
+function AdjustPrevSMSlope_bak1(delta_value)
+  reaper.ShowConsoleMsg('adjusting slope at rating: ' .. delta_value .. "\n")
+  local item = reaper.GetSelectedMediaItem(0, 0)
+  local take = reaper.GetActiveTake(item)
+  add_SM_at_start_end_of_take_item(take)
+  reaper.ShowConsoleMsg('n_stretch_markers: ' .. reaper.GetTakeNumStretchMarkers(take) .. "\n")
+  local sm_idx, sm_pos = get_stretch_marker_at_edit_cursor()
+
+  local sm_head_prev = GetSMData(take, sm_idx - 1)
+  local sm_body_prev = GetSMData(take, sm_idx)
+  local sm_tail_prev = GetSMData(take, sm_idx + 1)
+
+  AdjustSM(delta_value)
+  local sm_head_post = GetSMData(take, sm_idx - 1)
+  local sm_body_post = GetSMData(take, sm_idx)
+  local sm_tail_post = GetSMData(take, sm_idx + 1)
+
+  local head_left_rate = sm_head_prev.rate_left
   -- local head_new_slope = 1 - sm_head_post.len_after / sm_head_prev.len_after + sm_head_prev.slope
   local head_new_slope = 1 - head_left_rate / (sm_head_post.len_init/sm_head_post.len_after)
   reaper.SetTakeStretchMarkerSlope(take, sm_idx-1, head_new_slope)
@@ -316,7 +376,6 @@ function AdjustPrevSMSlope(delta_value)
       reaper.SetTakeStretchMarker(take, i, pos + offset_body2tail)
     end
   end
-
 
 
 
