@@ -5,11 +5,11 @@ moves stretch markers in first selected item at edit cursor position.
 either by a absolute time value or reaper project zoom level dependant value.
 
 ## How to use
-- add script starts with 'API' to reaper action list and 
-assign shortcut key as needed.
-- select item and click on a stretch marker to anchor the edit cursor to it.
-- run corresponding script to move the stretch marker.
-- the step size can be setup in `configs.lua`
+- Add script starts with 'API' to reaper action list and assign shortcut key as needed.
+- Select item and click on a stretch marker to anchor the edit cursor to it.
+- Setup the trweaking step size and zoom level dependant lambda in `configs.lua`.
+- Run corresponding script to move the stretch marker. Tune the parameters in `configs.lua` if needed.
+
 
 ## Assign 2way move function to mousewheel or midi encoder
 - `API_SM_move_abs_val_2way.lua` and `API_SM_move_zoom_dep_2way`
@@ -18,3 +18,8 @@ is suitable for assigning to mousewheel or midi encoder.
 - For midi encoder, besides adding shortcut, set MIDI CC to Relative 2 mode, tested on the main encoder(left-most one) 
 on [Arturia MiniLab 3](https://www.arturia.com/products/hybrid-synths/minilab-3/update)).
 - To reverse the direction, change `REVERT = false` to `REVERT = true` in the script `API_SM_move_abs_val_2way.lua` and `API_SM_move_zoom_dep_2way`.
+
+
+## TODOS
+- Fix issue of adding stretch markers at the end(or start) of item on tweaking.
+- Add constraint for step size and lambda to avoid extreme adjustment.
